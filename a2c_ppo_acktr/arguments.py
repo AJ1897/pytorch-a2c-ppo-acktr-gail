@@ -192,6 +192,7 @@ def get_args():
     parser.add_argument('--wandb_key',  type=str, default=None, help='Wandb token key for login. If None, shell login assumed')
 
     parser.add_argument('--hidden_size', type=int, default=64, help='size of the hidden state')
+    parser.add_argument('--scale_down', type=float, default=0.3, help='wont do anything, only for logging purpuse')
 
     args = parser.parse_args()
 
