@@ -5,10 +5,9 @@ debug = 0
 wandb = 'pupper1'
 
 SEEDS = list(range(3))
-HIDDEN_SIZES = [64, 256]
-HIDDEN_SIZES = [128]
+HIDDEN_SIZES = [64, 128, 256]
 # FRAME_STACCS = [1,4]
-FRAME_STACCS = [1]
+FRAME_STACCS = [4]
 NUM_PROCESSES = [1,4]
 
 if debug:

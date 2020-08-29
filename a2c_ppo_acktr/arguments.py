@@ -187,9 +187,9 @@ def get_args():
     ## Massimo's args
     
     # logging
-    parser.add_argument('--wandb',     type=str, default=None, help='Wandb project name. If None, no wandb logging')
-    parser.add_argument('--name',      type=str, default=None, help='Wandb run name. If None, name will be random')
-    parser.add_argument('--wandb_key', type=str, default=None, help='Wandb token key for login. If None, shell login assumed')
+    parser.add_argument('--wandb',      type=str, default=None, help='Wandb project name. If None, no wandb logging')
+    parser.add_argument('--wandb_name', type=str, default=None, help='Wandb run name. If None, name will be random')
+    parser.add_argument('--wandb_key',  type=str, default=None, help='Wandb token key for login. If None, shell login assumed')
 
     parser.add_argument('--hidden_size', type=int, default=64, help='size of the hidden state')
 

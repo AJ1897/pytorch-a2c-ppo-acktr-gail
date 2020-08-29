@@ -34,10 +34,10 @@ def main():
 
         if args.wandb_key is not None:
             wandb.login(key=args.wandb_key)
-        if args.name is None:
+        if args.wandb_name is None:
             wandb.init(project=args.wandb)
         else:
-            wandb.init(project=args.wandb, name=args.name)
+            wandb.init(project=args.wandb, name=args.wandb_name)
         wandb.config.update(args)
     else:
         wandb=None
@@ -289,45 +289,25 @@ def main():
 
                 if gibson:
                     #TODO: adapt to wandb
-                    wandb.log(
-                        "Player Correct Placements",
-                        np.mean(player_correct_stacks),
+                    wandb.log({"Player Correct Placements":np.mean(player_correct_stacks)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Opponent Correct Placements",
-                        np.mean(opponent_correct_stacks),
+                    wandb.log({"Opponent Correct Placements":np.mean(opponent_correct_stacks)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Player Floor Placements",
-                        np.mean(player_floor_placements),
+                    wandb.log({"Player Floor Placements":np.mean(player_floor_placements)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Opponent Floot Placements",
-                        np.mean(opponent_floor_placements),
+                    wandb.log({"Opponent Floot Placements":np.mean(opponent_floor_placements)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Avg Tower Height",
-                        np.mean(avg_tower_height),
+                    wandb.log({"Avg Tower Height":np.mean(avg_tower_height)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Avg Win Rate",
-                        np.mean(avg_win_rate),
+                    wandb.log({"Avg Win Rate":np.mean(avg_win_rate)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Avg Cubes Placed",
-                        np.mean(avg_cubes_placed_total),
+                    wandb.log({"Avg Cubes Placed":np.mean(avg_cubes_placed_total)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Avg Player Distance",
-                        np.mean(avg_player_dist_to_ref),
+                    wandb.log({"Avg Player Distance":np.mean(avg_player_dist_to_ref)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Avg Opponent Distance",
-                        np.mean(avg_opponent_dist_to_ref),
+                    wandb.log({"Avg Opponent Distance":np.mean(avg_opponent_dist_to_ref)},
                         step=total_num_steps)
-                    wandb.log(
-                        "Opponent Policies",
-                        np.mean(opponnet_policies),
+                    wandb.log({"Opponent Policies":np.mean(opponnet_policies)},
                         step=total_num_steps)
 
                 # experiment.log_metric("# Trajectories (Total)", j, step=total_num_steps)
