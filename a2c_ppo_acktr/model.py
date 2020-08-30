@@ -22,12 +22,14 @@ class Policy(nn.Module):
                  action_space,
                  base=None,
                  base_kwargs=None,
-                 navi=False):
+                 navi=False,
+                 hidden_size=64):
         super(Policy, self).__init__()
         if base_kwargs is None:
             base_kwargs = {}
         if base is None:
             if len(obs_shape) == 3:
+                #TODO(add hidden size)
                 base = CNNBase
             elif len(obs_shape) == 1:
                 base = MLPBase
@@ -35,14 +37,8 @@ class Policy(nn.Module):
                 raise NotImplementedError
 
         print ("DEV: PPO using base:", type(base).__name__)
-        self.base = base(obs_shape[0], **base_kwargs)
+        self.base = base(obs_shape[0], hidden_size=hidden_size, **base_kwargs)
         # print(self.base.state_dict().keys())
-
-
-
-
-
-
 
 
         ######FIXME TEMPORARY for gibson experiments
@@ -66,10 +62,6 @@ class Policy(nn.Module):
         ######FIXME END
 
 
-
-
-
-
         if action_space.__class__.__name__ == "Discrete":
             num_outputs = action_space.n
             net_outputs = self.base.output_size
@@ -79,10 +71,6 @@ class Policy(nn.Module):
         elif action_space.__class__.__name__ == "Box":
             num_outputs = action_space.shape[0]
             self.dist = DiagGaussian(self.base.output_size, num_outputs)
-
-
-
-
 
 
             ######FIXME TEMPORARY for gibson experiments
@@ -97,11 +85,6 @@ class Policy(nn.Module):
             # print("=== loaded pretrained DiagGauss ====")
 
             ######FIXME END
-
-
-
-
-
 
 
         elif action_space.__class__.__name__ == "MultiBinary":
