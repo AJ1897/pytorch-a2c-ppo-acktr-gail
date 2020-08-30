@@ -364,5 +364,5 @@ class VideoWrapper(gym.Wrapper):
 
         frames = np.swapaxes(np.array(self.last_frames), 1, 3)
         frames = np.swapaxes(frames, 2, 3)
-        
         wandb.log({"video": wandb.Video(frames, fps=10, format="gif")})
+        print ("=== Logged GIF")
