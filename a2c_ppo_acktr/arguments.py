@@ -113,6 +113,11 @@ def get_args():
         default=10,
         help='log interval, one log per n updates (default: 10)')
     parser.add_argument(
+        '--gif-interval',
+        type=int,
+        default=100,
+        help='GIF interval, one GIF per n updates (default: 100)')
+    parser.add_argument(
         '--save-interval',
         type=int,
         default=100,

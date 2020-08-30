@@ -5,6 +5,7 @@ import os
 import gym
 import numpy as np
 import torch
+import wandb
 from gym.spaces.box import Box
 
 from baselines import bench
@@ -12,8 +13,7 @@ from baselines.common.atari_wrappers import make_atari, wrap_deepmind, ScaledFlo
 from baselines.common.vec_env import VecEnvWrapper
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.shmem_vec_env import ShmemVecEnv
-from baselines.common.vec_env.vec_normalize import \
-    VecNormalize as VecNormalize_
+from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
 try:
     import dm_control2gym
@@ -37,15 +37,7 @@ def wrap_gibson(env):
     return env
 
 
-def make_env(env_id,
-             seed,
-             rank,
-             log_dir,
-             allow_early_resets,
-             custom_gym,
-             navi,
-             enjoy=False):
-
+def make_env(env_id, seed, rank, log_dir, allow_early_resets, custom_gym, navi, enjoy=False):
     def _thunk():
         print("CUSTOM GYM:", custom_gym)
         if custom_gym is not None and custom_gym != "" and "gibson" not in custom_gym:
@@ -67,11 +59,12 @@ def make_env(env_id,
                     print("PPO: using Gibson env with output path:", path)
                 else:
                     print(
-                        "PPO: using Gibson in playback mode, using main "
-                        "directory for opponent policies: ", POLICY_DIR)
+                        "PPO: using Gibson in playback mode, using main " "directory for opponent policies: ",
+                        POLICY_DIR,
+                    )
 
         if env_id.startswith("dm"):
-            _, domain, task = env_id.split('.')
+            _, domain, task = env_id.split(".")
             env = dm_control2gym.make(domain_name=domain, task_name=task)
         else:
             env = gym.make(env_id)
@@ -79,8 +72,11 @@ def make_env(env_id,
         if "gibson" in custom_gym and not enjoy and "TwoPlayer" in env_id:
             env.unwrapped.subfolder = subfolder
 
-        is_atari = hasattr(gym.envs, 'atari') and isinstance(
-            env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
+        #
+        if env_id.startswith("Pupper"):
+            env = VideoWrapper(env)
+
+        is_atari = hasattr(gym.envs, "atari") and isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
         if is_atari:
             env = make_atari(env_id)
 
@@ -88,14 +84,11 @@ def make_env(env_id,
 
         obs_shape = env.observation_space.shape
 
-        if str(env.__class__.__name__).find('TimeLimit') >= 0:
+        if str(env.__class__.__name__).find("TimeLimit") >= 0:
             env = TimeLimitMask(env)
 
         if log_dir is not None:
-            env = bench.Monitor(
-                env,
-                os.path.join(log_dir, str(rank)),
-                allow_early_resets=allow_early_resets)
+            env = bench.Monitor(env, os.path.join(log_dir, str(rank)), allow_early_resets=allow_early_resets)
 
         if not navi:
             if is_atari:
@@ -109,7 +102,8 @@ def make_env(env_id,
                 raise NotImplementedError(
                     "CNN models work only for atari,\n"
                     "please use a custom wrapper for a custom pixel input env.\n"
-                    "See wrap_deepmind for an example.")
+                    "See wrap_deepmind for an example."
+                )
 
             # If the input has shape (W,H,3), wrap for PyTorch convolutions
             obs_shape = env.observation_space.shape
@@ -121,35 +115,28 @@ def make_env(env_id,
     return _thunk
 
 
-def make_vec_envs(env_name,
-                  seed,
-                  num_processes,
-                  gamma,
-                  log_dir,
-                  device,
-                  allow_early_resets,
-                  custom_gym,
-                  navi=False,
-                  num_frame_stack=None,
-                  enjoy=False):
-    print(
-        f"=== Making {num_processes} parallel envs with {num_frame_stack} stacked frames"
-    )
+def make_vec_envs(
+    env_name,
+    seed,
+    num_processes,
+    gamma,
+    log_dir,
+    device,
+    allow_early_resets,
+    custom_gym,
+    navi=False,
+    num_frame_stack=None,
+    enjoy=False,
+):
+    print(f"=== Making {num_processes} parallel envs with {num_frame_stack} stacked frames")
     envs = [
-        make_env(
-            env_name,
-            seed,
-            i,
-            log_dir,
-            allow_early_resets,
-            custom_gym,
-            navi=navi,
-            enjoy=enjoy) for i in range(num_processes)
+        make_env(env_name, seed, i, log_dir, allow_early_resets, custom_gym, navi=navi, enjoy=enjoy)
+        for i in range(num_processes)
     ]
 
     if len(envs) > 1:
         print("ENV: ShmemVecEnv")
-        envs = ShmemVecEnv(envs, context='fork')
+        envs = ShmemVecEnv(envs, context="fork")
     else:
         print("ENV: DummyVecEnv")
         envs = DummyVecEnvPPO(envs)
@@ -178,11 +165,10 @@ def make_vec_envs(env_name,
 
 # Checks whether done was caused my timit limits or not
 class TimeLimitMask(gym.Wrapper):
-
     def step(self, action):
         obs, rew, done, info = self.env.step(action)
         if done and self.env._max_episode_steps == self.env._elapsed_steps:
-            info['bad_transition'] = True
+            info["bad_transition"] = True
 
         return obs, rew, done, info
 
@@ -192,7 +178,6 @@ class TimeLimitMask(gym.Wrapper):
 
 # Can be used to test recurrent policies for Reacher-v2
 class MaskGoal(gym.ObservationWrapper):
-
     def observation(self, observation):
         if self.env._elapsed_steps > 0:
             observation[-2:] = 0
@@ -200,7 +185,6 @@ class MaskGoal(gym.ObservationWrapper):
 
 
 class TransposeObs(gym.ObservationWrapper):
-
     def __init__(self, env=None):
         """
         Transpose observation space (base class)
@@ -209,7 +193,6 @@ class TransposeObs(gym.ObservationWrapper):
 
 
 class TransposeImage(TransposeObs):
-
     def __init__(self, env=None, op=[2, 0, 1]):
         """
         Transpose observation space for images
@@ -220,18 +203,16 @@ class TransposeImage(TransposeObs):
         obs_shape = self.observation_space.shape
         self.observation_space = Box(
             self.observation_space.low[0, 0, 0],
-            self.observation_space.high[0, 0, 0], [
-                obs_shape[self.op[0]], obs_shape[self.op[1]],
-                obs_shape[self.op[2]]
-            ],
-            dtype=self.observation_space.dtype)
+            self.observation_space.high[0, 0, 0],
+            [obs_shape[self.op[0]], obs_shape[self.op[1]], obs_shape[self.op[2]]],
+            dtype=self.observation_space.dtype,
+        )
 
     def observation(self, ob):
         return ob.transpose(self.op[0], self.op[1], self.op[2])
 
 
 class VecPyTorch(VecEnvWrapper):
-
     def __init__(self, venv, device):
         """Return only every `skip`-th frame"""
         super(VecPyTorch, self).__init__(venv)
@@ -259,7 +240,6 @@ class VecPyTorch(VecEnvWrapper):
 
 
 class VecNormalize(VecNormalize_):
-
     def __init__(self, *args, **kwargs):
         super(VecNormalize, self).__init__(*args, **kwargs)
         self.training = True
@@ -268,9 +248,7 @@ class VecNormalize(VecNormalize_):
         if self.ob_rms:
             if self.training and update:
                 self.ob_rms.update(obs)
-            obs = np.clip((obs - self.ob_rms.mean) /
-                          np.sqrt(self.ob_rms.var + self.epsilon), -self.clipob,
-                          self.clipob)
+            obs = np.clip((obs - self.ob_rms.mean) / np.sqrt(self.ob_rms.var + self.epsilon), -self.clipob, self.clipob)
             return obs
         else:
             return obs
@@ -285,7 +263,6 @@ class VecNormalize(VecNormalize_):
 # Derived from
 # https://github.com/openai/baselines/blob/master/baselines/common/vec_env/vec_frame_stack.py
 class VecPyTorchFrameStack(VecEnvWrapper):
-
     def __init__(self, venv, nstack, device=None):
         self.venv = venv
         self.nstack = nstack
@@ -297,21 +274,19 @@ class VecPyTorchFrameStack(VecEnvWrapper):
         high = np.repeat(wos.high, self.nstack, axis=0)
 
         if device is None:
-            device = torch.device('cpu')
+            device = torch.device("cpu")
         self.stacked_obs = torch.zeros((venv.num_envs,) + low.shape).to(device)
 
-        observation_space = gym.spaces.Box(
-            low=low, high=high, dtype=venv.observation_space.dtype)
+        observation_space = gym.spaces.Box(low=low, high=high, dtype=venv.observation_space.dtype)
         VecEnvWrapper.__init__(self, venv, observation_space=observation_space)
 
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
-        self.stacked_obs[:, :-self.shape_dim0] = \
-            self.stacked_obs[:, self.shape_dim0:]
+        self.stacked_obs[:, : -self.shape_dim0] = self.stacked_obs[:, self.shape_dim0 :]
         for (i, new) in enumerate(news):
             if new:
                 self.stacked_obs[i] = 0
-        self.stacked_obs[:, -self.shape_dim0:] = obs
+        self.stacked_obs[:, -self.shape_dim0 :] = obs
         return self.stacked_obs, rews, news, infos
 
     def reset(self):
@@ -320,7 +295,7 @@ class VecPyTorchFrameStack(VecEnvWrapper):
             self.stacked_obs = torch.zeros(self.stacked_obs.shape)
         else:
             self.stacked_obs.zero_()
-        self.stacked_obs[:, -self.shape_dim0:] = obs
+        self.stacked_obs[:, -self.shape_dim0 :] = obs
         return self.stacked_obs
 
     def close(self):
@@ -328,15 +303,13 @@ class VecPyTorchFrameStack(VecEnvWrapper):
 
 
 class DummyVecEnvPPO(DummyVecEnv):
-
     def step_wait(self):
         for e in range(self.num_envs):
             action = self.actions[e]
             # if isinstance(self.envs[e].action_space, spaces.Discrete):
             #    action = int(action)
 
-            obs, self.buf_rews[e], self.buf_dones[e], self.buf_infos[
-                e] = self.envs[e].step(action)
+            obs, self.buf_rews[e], self.buf_dones[e], self.buf_infos[e] = self.envs[e].step(action)
 
             buf_infos = [d.copy() for d in self.buf_infos]
 
@@ -344,6 +317,30 @@ class DummyVecEnvPPO(DummyVecEnv):
                 obs = self.envs[e].reset()
             self._save_obs(e, obs)
 
-        return (self._obs_from_buf(), np.copy(self.buf_rews),
-                np.copy(self.buf_dones), buf_infos)
+        return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), buf_infos)
 
+
+class VideoWrapper(gym.Wrapper):
+    """ Gathers up the frames from an episode and allows to upload them to Weights & Biases
+    Thanks to @cyrilibrahim for this snippet
+
+    """
+
+    def __init__(self, env):
+        super(VideoWrapper, self).__init__(env)
+        self.episode_images = []
+
+    def reset(self, **kwargs):
+        self.episode_images.clear()
+        state = self.env.reset()
+        return state
+
+    def step(self, action):
+        state, reward, done, info = self.env.step(action)
+        frame = self.env.render()
+        frame = frame[np.newaxis, :, :, :]
+        self.episode_images.append(frame)
+        return state, reward, done, info
+
+    def send_wandb_video(self):
+        wandb.log({"video": wandb.Video(np.concatenate(self.episode_images), fps=10, format="gif")})
