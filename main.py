@@ -268,7 +268,7 @@ for j in range(num_updates):
 
     if j % args.gif_interval == 0 and len(episode_rewards) > 1:
         if args.env_name.startswith("Pupper"):
-            envs[0].send_wandb_video()  # or try envs.unwrapped.envs[0]
+            envs.unwrapped.envs[0].send_wandb_video()  # or try envs.unwrapped.envs[0]
 
     if j % args.log_interval == 0 and len(episode_rewards) > 1:
 

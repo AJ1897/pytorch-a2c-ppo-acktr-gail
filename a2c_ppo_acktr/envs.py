@@ -329,18 +329,40 @@ class VideoWrapper(gym.Wrapper):
     def __init__(self, env):
         super(VideoWrapper, self).__init__(env)
         self.episode_images = []
+        # we need to store the last episode's frames because by the time we
+        # wanna upload them, reset() has juuust been called, so the self.episode_rewards buffer would be empty
+        self.last_frames = None
+
+        # we also only render every 20th episode to save framerate
+        self.episode_no = 0
+        self.render_every_n_episodes = 20  # can be modified
 
     def reset(self, **kwargs):
-        self.episode_images.clear()
+        self.episode_no += 1
+        if self.episode_no == self.render_every_n_episodes:
+            self.episode_no = 0
+            self.last_frames = self.episode_images[:]
+            self.episode_images.clear()
+
         state = self.env.reset()
+
         return state
 
     def step(self, action):
         state, reward, done, info = self.env.step(action)
-        frame = self.env.render()
-        frame = frame[np.newaxis, :, :, :]
-        self.episode_images.append(frame)
+
+        if self.episode_no + 1 == self.render_every_n_episodes:
+            frame = np.copy(self.env.render())
+            self.episode_images.append(frame)
+
         return state, reward, done, info
 
     def send_wandb_video(self):
-        wandb.log({"video": wandb.Video(np.concatenate(self.episode_images), fps=10, format="gif")})
+        if self.last_frames is None or len(self.last_frames) == 0:
+            print("Not enough images for GIF. continuing...")
+            return
+
+        frames = np.swapaxes(np.array(self.last_frames), 1, 3)
+        frames = np.swapaxes(frames, 2, 3)
+        
+        wandb.log({"video": wandb.Video(frames, fps=10, format="gif")})
