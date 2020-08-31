@@ -1,12 +1,6 @@
 from random import shuffle
 from shutil import copyfile
 
-try:
-    from comet_ml import Experiment
-    comet_loaded = True
-except ImportError:
-    comet_loaded = False
-
 import os
 import time
 from collections import deque
