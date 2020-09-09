@@ -98,6 +98,8 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, custom_gym, navi, 
                 env = wrap_gibson(env)
             elif "Splearn" in env_id:
                 pass
+            elif "GrowSpace" in env_id:
+                pass
             elif len(env.observation_space.shape) == 3:
                 raise NotImplementedError(
                     "CNN models work only for atari,\n"
@@ -365,4 +367,4 @@ class VideoWrapper(gym.Wrapper):
         frames = np.swapaxes(np.array(self.last_frames), 1, 3)
         frames = np.swapaxes(frames, 2, 3)
         wandb.log({"video": wandb.Video(frames, fps=10, format="gif")})
-        print ("=== Logged GIF")
+        print("=== Logged GIF")
