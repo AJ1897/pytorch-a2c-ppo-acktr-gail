@@ -378,7 +378,7 @@ class PupperRewardMonitorWrapper(gym.Wrapper):
         self.rewards_run = []
         self.rewards_stable = []
         self.rewards_ctrl = []
-        self.episode = 10
+        self.episode = 0
         self.upload_every_n_episodes = 20
         self.rewards_run_store = deque(maxlen=self.upload_every_n_episodes)
         self.rewards_stable_store = deque(maxlen=self.upload_every_n_episodes)
