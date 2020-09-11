@@ -1,3 +1,4 @@
+from collections import deque
 from datetime import datetime
 import importlib
 import os
@@ -74,6 +75,7 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, custom_gym, navi, 
 
         #
         if env_id.startswith("Pupper"):
+            env = PupperRewardMonitorWrapper(env)
             env = VideoWrapper(env)
 
         is_atari = hasattr(gym.envs, "atari") and isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
@@ -97,6 +99,8 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, custom_gym, navi, 
             elif "Gibson" in env_id:
                 env = wrap_gibson(env)
             elif "Splearn" in env_id:
+                pass
+            elif "GrowSpace" in env_id:
                 pass
             elif len(env.observation_space.shape) == 3:
                 raise NotImplementedError(
@@ -365,4 +369,45 @@ class VideoWrapper(gym.Wrapper):
         frames = np.swapaxes(np.array(self.last_frames), 1, 3)
         frames = np.swapaxes(frames, 2, 3)
         wandb.log({"video": wandb.Video(frames, fps=10, format="gif")})
-        print ("=== Logged GIF")
+        print("=== Logged GIF")
+
+
+class PupperRewardMonitorWrapper(gym.Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self.rewards_run = []
+        self.rewards_stable = []
+        self.rewards_ctrl = []
+        self.episode = 0
+        self.upload_every_n_episodes = 20
+        self.rewards_run_store = deque(maxlen=self.upload_every_n_episodes)
+        self.rewards_stable_store = deque(maxlen=self.upload_every_n_episodes)
+        self.rewards_ctrl_store = deque(maxlen=self.upload_every_n_episodes)
+
+    def step(self, action):
+        obs, rew, done, misc = self.env.step(action)
+        self.rewards_run.append(misc["reward_run"])
+        self.rewards_stable.append(misc["reward_stable"])
+        self.rewards_ctrl.append(misc["reward_ctrl"])
+        return obs, rew, done, misc
+
+    def reset(self, **kwargs):
+        if len(self.rewards_run) > 0:
+            self.episode += 1
+            if self.episode >= self.upload_every_n_episodes:
+                self.episode = 0
+                wandb.log(
+                    {
+                        "reward forward": np.mean(self.rewards_run_store),
+                        "reward small action": np.mean(self.rewards_ctrl_store),
+                        "reward stability": np.mean(self.rewards_stable_store),
+                    }
+                )
+            else:
+                self.rewards_stable_store.append(sum(self.rewards_stable))
+                self.rewards_run_store.append(sum(self.rewards_run))
+                self.rewards_ctrl_store.append(sum(self.rewards_ctrl))
+        self.rewards_run.clear()
+        self.rewards_ctrl.clear()
+        self.rewards_stable.clear()
+        return super().reset(**kwargs)
