@@ -50,16 +50,19 @@ torch.set_num_threads(1)
 device = torch.device("cuda:0" if args.cuda else "cpu")
 
 envs = make_vec_envs(
-    args.env_name,
-    args.seed,
-    args.num_processes,
-    args.gamma,
-    args.log_dir,
-    device,
-    False,
-    args.custom_gym,
-    args.navi,
-    args.frame_stacc,
+    env_name=args.env_name,
+    seed=args.seed,
+    num_processes=args.num_processes,
+    gamma=args.gamma,
+    log_dir=args.log_dir,
+    device=device,
+    allow_early_resets=False,
+    custom_gym=args.custom_gym,
+    navi=args.navi,
+    num_frame_stack=args.frame_stacc,
+    coeff_reward_run=args.coeff_reward_run,
+    coeff_reward_stable=args.coeff_reward_stable,
+    coeff_reward_ctrl=args.coeff_reward_ctrl,
 )
 
 base = None
@@ -80,6 +83,7 @@ actor_critic = Policy(
     navi=args.navi,
     base=base,
     hidden_size=args.hidden_size,
+    n_layers=args.n_layers,
 )
 actor_critic.to(device)
 
