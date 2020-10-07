@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-debug = 0
+debug = 1
 
 wandb = 'pupper4'
 
@@ -9,9 +9,11 @@ N_RUNS = 100
 SEEDS = list(range(2))
 
 ## env
+# ACTION_TYPE = ["Relative", "Incremental"]
+ACTION_TYPE = ["Incremental"]
 ACTION_SMOOTHING = [1, 2, 3, 4]
 RANDOM_ROT = [0, 1, 10, 100]
-ACTION_SCALING = [1.] + list(np.arange(0.05, 0.5, 0.05)) 
+ACTION_SCALING = [1.0, 2.0, 4.0] + list(np.arange(0.05, 0.5, 0.05))
 
 ## model
 HIDDEN_SIZES = [64, 128, 256]
@@ -32,6 +34,12 @@ for seed in SEEDS:
     for frame_stacc in FRAME_STACCS:
       for num_processes in NUM_PROCESSES:
         for scale_down in SCALE_DOWN:
+          for action_type in ACTION_TYPE:
+            
+            if action_type=='Incremental':
+              action_smoothing = 1
+
+
             command = ("borgy submit -i images.borgy.elementai.net/fgolemo/gym:v4 " 
                 "--mem 32 --gpu-mem 12 --gpu 1 --cuda-version 10.1 -H -- bash -c "
                 " 'cd /root && export PATH=/mnt/home/optimass/miniconda3/bin/:$PATH " 
@@ -42,11 +50,18 @@ for seed in SEEDS:
                 "&& cd ~/pytorch-a2c-ppo-acktr-gail && ls . "
                 "&& python main.py "
                 "--custom-gym stanford_quad "
-                ## "Pupper-Walk-{action}_aScale_{action_scaling}-aSmooth_{action_smoothing}-RandomZRot_{random_rot}-{headlessness}-v0
-                f"--env-name Pupper-Walk-Relative_aScale_{action_scaling:.2}-aSmooth_{action_smoothing}-RandomZRot_{random_rot}-Headless-v0 "
+                ## "Pupper-Walk-Relative-aScale_0.05-aSmooth_4-RandomZRot_1-Headless-v0"
+                # (
+                #         f"Pupper-Walk-{action_type}-"
+                #         f"aScale_{action_scaling:.2}-"
+                #         f"aSmooth_{action_smoothing}-"
+                #         f"RandomZRot_{random_rot}-{headlessness}-v0"
+                #     )
+                f"--env-name Pupper-Walk-{action_type}-aScale_{action_scaling:.2}-aSmooth_{action_smoothing}-RandomZRot_{random_rot}-Headless-v0 "
                 f"--action_scaling {action_scaling:.2} "
                 f"--action_smoothing {action_smoothing} "
                 f"--random_rot {random_rot} "
+                f"--action_type {action_type} "
                 "--algo ppo "
                 "--use-gae "
                 "--log-interval 1 "
