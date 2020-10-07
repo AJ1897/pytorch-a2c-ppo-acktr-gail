@@ -6,11 +6,11 @@ import random
 def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
-debug = 1
+debug = 0
 
 wandb = 'pupper4'
 
-N_RUNS = 80
+N_RUNS = 100
 SEEDS = list(range(2))
 
 ## env
@@ -22,11 +22,11 @@ ACTION_SCALING = [1.] + list(np.arange(0.05, 0.5, 0.05))
 HIDDEN_SIZES = [64, 128, 256]
 N_LAYERS = [2, 3, 4, 5, 6]
 FRAME_STACCS = [1,2,4,8]
-# NUM_PROCESSES = [1,4] # can only do 1 now
-NUM_PROCESSES = [1]
-COEFF_REWARD_RUN = [0.1, 0, 1, 10, 100]
-COEFF_REWARD_STABLE = [0.01, 0.1, 0, 1, 10]
-COEFF_REWARD_CTRL = [0.01, 0.1, 0, 1, 10]
+NUM_PROCESSES = [1] # >1 doesnt work now
+# COEFF_REWARD_RUN = [0.1, 0, 1, 10., 100., 1000.]
+COEFF_REWARD_RUN = [1., 10., 100., 1000.]
+COEFF_REWARD_STABLE = [0.01, 0.1, 0., 1., 10.]
+COEFF_REWARD_CTRL = [0.01, 0.1, 0., 1., 10.]
 
 
 if debug:
@@ -80,7 +80,8 @@ for _ in range(N_RUNS):
                 "--gamma 0.99 "
                 "--gae-lambda 0.95 "
                 f"--frame-stacc {frame_stacc} "
-                "--num-env-steps 5000000 "
+                #"--num-env-steps 5000000 "
+                "--num-env-steps 20000000 "
                 "--use-linear-lr-decay "
                 "--use-proper-time-limits "
                 "--save-interval 10 "
