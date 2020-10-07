@@ -1,11 +1,6 @@
 import os
 import numpy as np
 
-import string
-import random
-def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
 debug = 0
 
 wandb = 'pupper4'
@@ -32,27 +27,12 @@ COEFF_REWARD_CTRL = [0.01, 0.1, 0., 1., 10.]
 if debug:
     wandb = 'temp'
 
-for _ in range(N_RUNS):
-
-    action_scaling = np.random.choice(ACTION_SCALING)
-    action_smoothing = np.random.choice(ACTION_SMOOTHING)
-    random_rot = np.random.choice(RANDOM_ROT)
-    
-    hidden_size = np.random.choice(HIDDEN_SIZES)
-    frame_stacc = np.random.choice(FRAME_STACCS)
-    num_processes = np.random.choice(NUM_PROCESSES)
-    n_layers = np.random.choice(N_LAYERS)
-    coeff_reward_run = np.random.choice(COEFF_REWARD_RUN)
-    coeff_reward_stable = np.random.choice(COEFF_REWARD_STABLE)
-    coeff_reward_ctrl = np.random.choice(COEFF_REWARD_CTRL)
-
-    wandb_name = id_generator() 
-    
-    for seed in SEEDS: 
-
-        seed = np.random.randint(10e5)
-
-        command = ("borgy submit -i images.borgy.elementai.net/fgolemo/gym:v4 " 
+for seed in SEEDS:
+  for hidden_size in HIDDEN_SIZES:
+    for frame_stacc in FRAME_STACCS:
+      for num_processes in NUM_PROCESSES:
+        for scale_down in SCALE_DOWN:
+            command = ("borgy submit -i images.borgy.elementai.net/fgolemo/gym:v4 " 
                 "--mem 32 --gpu-mem 12 --gpu 1 --cuda-version 10.1 -H -- bash -c "
                 " 'cd /root && export PATH=/mnt/home/optimass/miniconda3/bin/:$PATH " 
                 "&& export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/home/optimass/.mujoco/mujoco200/bin " 
@@ -97,9 +77,5 @@ for _ in range(N_RUNS):
                 f"--coeff_reward_ctrl {coeff_reward_ctrl:.2} "
                 "> ~/borgy/pupper.log '"
         )
-
-        print(command)
-        os.system(command)
-
-        if debug:
-            os._exit(0)
+          if debug:
+              exit()

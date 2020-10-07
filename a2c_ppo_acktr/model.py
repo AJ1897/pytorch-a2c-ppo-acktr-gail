@@ -15,8 +15,7 @@ class Flatten(nn.Module):
 
 
 class Policy(nn.Module):
-    def __init__(self, obs_shape, action_space, base=None, base_kwargs=None, navi=False,
-                hidden_size=64, n_layers=2):
+    def __init__(self, obs_shape, action_space, base=None, base_kwargs=None, navi=False, hidden_size=64):
         super(Policy, self).__init__()
         if base_kwargs is None:
             base_kwargs = {}
@@ -30,7 +29,7 @@ class Policy(nn.Module):
                 raise NotImplementedError
 
         print("DEV: PPO using base:", type(base).__name__)
-        self.base = base(obs_shape[0], hidden_size=hidden_size, n_layers=n_layers, **base_kwargs)
+        self.base = base(obs_shape[0], hidden_size=hidden_size, **base_kwargs)
         # print(self.base.state_dict().keys())
 
         if action_space.__class__.__name__ == "Discrete":
@@ -121,7 +120,7 @@ class RandomPolicy(Policy):
 
 
 class NNBase(nn.Module):
-    def __init__(self, recurrent, recurrent_input_size, hidden_size, n_layers):
+    def __init__(self, recurrent, recurrent_input_size, hidden_size):
         super(NNBase, self).__init__()
 
         self._hidden_size = hidden_size
@@ -300,37 +299,21 @@ class EfficientnetBase(NNBase):
 
 
 class MLPBase(NNBase):
-    def __init__(self, num_inputs, recurrent=False, hidden_size=64, n_layers=2):
-        super(MLPBase, self).__init__(recurrent, num_inputs, hidden_size, n_layers)
+    def __init__(self, num_inputs, recurrent=False, hidden_size=64):
+        super(MLPBase, self).__init__(recurrent, num_inputs, hidden_size)
 
         if recurrent:
             num_inputs = hidden_size
 
         init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0), np.sqrt(2))
 
-        # self.actor = nn.Sequential(init_(
-        #     nn.Linear(num_inputs, hidden_size)),
-        #     nn.Tanh(),
-        #     init_(nn.Linear(hidden_size, hidden_size)),
-        #     nn.Tanh()
-        # )
+        self.actor = nn.Sequential(
+            init_(nn.Linear(num_inputs, hidden_size)), nn.Tanh(), init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh()
+        )
 
-        self.actor = [init_(nn.Linear(num_inputs, hidden_size)), nn.Tanh()]
-        for _ in range(n_layers-1):
-           self.actor += [init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh()]
-        self.actor = nn.Sequential(*self.actor)
-
-        # self.critic = nn.Sequential(init_(
-        #     nn.Linear(num_inputs, hidden_size)),
-        #     nn.Tanh(),
-        #     init_(nn.Linear(hidden_size, hidden_size)),
-        #     nn.Tanh()
-        # )
-
-        self.critic = [init_(nn.Linear(num_inputs, hidden_size)), nn.Tanh()]
-        for _ in range(n_layers-1):
-           self.critic += [init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh()]
-        self.critic = nn.Sequential(*self.critic)
+        self.critic = nn.Sequential(
+            init_(nn.Linear(num_inputs, hidden_size)), nn.Tanh(), init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh()
+        )
 
         self.critic_linear = init_(nn.Linear(hidden_size, 1))
 
