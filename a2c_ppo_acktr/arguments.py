@@ -104,7 +104,7 @@ def get_args():
 
 
     # defining the env, only for logging purposes
-    parser.add_argument("--action_type",  type=float, default=1, help="(for logging only) relative, absolute or incremental actions")
+    parser.add_argument("--action_type",  type=str, default=1, help="(for logging only) relative, absolute or incremental actions")
     parser.add_argument("--action_scaling",  type=float, default=1, help="(for logging only) scales the actions")
     parser.add_argument("--action_smoothing",  type=float, default=1, help="(for logging only) smooths the actions over multiple timesteps")
     parser.add_argument("--random_rot",  type=float, default=1, help="(for logging only) variance of the initial position's angle")
