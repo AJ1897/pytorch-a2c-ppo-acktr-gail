@@ -6,20 +6,27 @@ import random
 def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
-debug = 1
+debug = 0
 
 wandb = 'pupper4'
 
-N_RUNS = 100
+N_RUNS = 250
 SEEDS = list(range(2))
 
 ## env
 # ACTION_TYPE = ["Relative", "Incremental"]
-ACTION_TYPE = ["Relative"]
-# ACTION_TYPE = ["Incremental"]
-ACTION_SMOOTHING = [1, 2, 3, 4]
+
+# ACTION_TYPE = ["Relative"]
+# ACTION_SCALING = [1.0, 2.0, 4.0] + list(np.arange(0.05, 0.5, 0.05))
+# ACTION_SMOOTHING = [1, 2, 3, 4]
+
+ACTION_TYPE = ["Incremental"]
+ACTION_SCALING = [1.0, 2.0, 0.45]
+ACTION_SMOOTHING = [1,]
+
 RANDOM_ROT = [0, 1, 10, 100]
-ACTION_SCALING = [1.0, 2.0, 4.0] + list(np.arange(0.05, 0.5, 0.05))
+# episode_length = [120, 240, 360]
+EPISODE_LENGTH = [240, 360]
 
 ## model
 HIDDEN_SIZES = [64, 128, 256]
@@ -43,6 +50,7 @@ for _ in range(N_RUNS):
     action_scaling = np.random.choice(ACTION_SCALING)
     action_smoothing = np.random.choice(ACTION_SMOOTHING)
     random_rot = np.random.choice(RANDOM_ROT)
+    episode_length = np.random.choice(EPISODE_LENGTH)
     
     hidden_size = np.random.choice(HIDDEN_SIZES)
     frame_stacc = np.random.choice(FRAME_STACCS)
@@ -65,17 +73,19 @@ for _ in range(N_RUNS):
         "&& python main.py "
         "--custom-gym stanford_quad "
         ## "Pupper-Walk-Relative-aScale_0.05-aSmooth_4-RandomZRot_1-Headless-v0"
-        # (
-        #         f"Pupper-Walk-{action_type}-"
-        #         f"aScale_{action_scaling:.2}-"
-        #         f"aSmooth_{action_smoothing}-"
-        #         f"RandomZRot_{random_rot}-{headlessness}-v0"
-        #     )
-        f"--env-name Pupper-Walk-{action_type}-aScale_{action_scaling:.2}-aSmooth_{action_smoothing}-RandomZRot_{random_rot}-Headless-v0 "
+        # name = (
+        #     f"Pupper-Walk-{action_type}-"
+        #     f"steps_{episode_length}-"
+        #     f"aScale_{action_scaling:.2}-"
+        #     f"aSmooth_{action_smoothing}-"
+        #     f"RandomZRot_{random_rot}-{headlessness}-v0"
+        # )
+        f"--env-name Pupper-Walk-{action_type}-steps_{episode_length}-aScale_{action_scaling:.2}-aSmooth_{action_smoothing}-RandomZRot_{random_rot}-Headless-v0 "
         f"--action_scaling {action_scaling:.2} "
         f"--action_smoothing {action_smoothing} "
         f"--random_rot {random_rot} "
         f"--action_type {action_type} "
+        f"--episode_length {episode_length} "
         "--algo ppo "
         "--use-gae "
         "--log-interval 1 "
