@@ -39,6 +39,16 @@ if args.wandb is not None:
                 parts = part.split("_")
                 setattr(args, parts[0], float(parts[1]))
 
+        envtypes= ["Incremental", "Absolute", "Relative"]
+        # get the right type and delist all others
+        for envtype in envtypes:
+            if envtype in args.env_name:
+                setattr(args, envtype, True)
+                envtypes.remove(envtype)
+                for x in envtypes:
+                    setattr(args, x, False)
+                break
+
     wandb.config.update(args)
 else:
     wandb = None
