@@ -94,20 +94,27 @@ def get_args():
 
     # architecture
     parser.add_argument("--hidden_size", type=int, default=64, help="size of the hidden state")
-    parser.add_argument("--n_layers",    type=int, default=2, help="depth of the policy neural net")
-    
+    parser.add_argument("--n_layers", type=int, default=2, help="depth of the policy neural net")
+
     # rewards
-    parser.add_argument("--coeff_reward_run",    type=float, default=1, help="modulate the run reward")
-    parser.add_argument("--coeff_reward_stable", type=float, default=.5, help="modulate the stable reward")
-    parser.add_argument("--coeff_reward_ctrl",   type=float, default=.1, help="modulate the ctrl reward")
-
-
+    parser.add_argument("--coeff_reward_run", type=float, default=1, help="modulate the run reward")
+    parser.add_argument("--coeff_reward_stable", type=float, default=0.5, help="modulate the stable reward")
+    parser.add_argument("--coeff_reward_ctrl", type=float, default=0.1, help="modulate the ctrl reward")
 
     # defining the env, only for logging purposes
-    parser.add_argument("--action_type",  type=str, default=1, help="(for logging only) relative, absolute or incremental actions")
-    parser.add_argument("--action_scaling",  type=float, default=1, help="(for logging only) scales the actions")
-    parser.add_argument("--action_smoothing",  type=float, default=1, help="(for logging only) smooths the actions over multiple timesteps")
-    parser.add_argument("--random_rot",  type=float, default=1, help="(for logging only) variance of the initial position's angle")
+    parser.add_argument(
+        "--action_type", type=str, default=1, help="(for logging only) relative, absolute or incremental actions"
+    )
+    parser.add_argument("--action_scaling", type=float, default=1, help="(for logging only) scales the actions")
+    parser.add_argument(
+        "--action_smoothing",
+        type=float,
+        default=1,
+        help="(for logging only) smooths the actions over multiple timesteps",
+    )
+    parser.add_argument(
+        "--random_rot", type=float, default=1, help="(for logging only) variance of the initial position's angle"
+    )
 
     args = parser.parse_args()
 
