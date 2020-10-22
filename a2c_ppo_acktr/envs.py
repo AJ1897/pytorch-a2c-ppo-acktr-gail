@@ -38,7 +38,8 @@ def wrap_gibson(env):
     return env
 
 
-def make_env(env_id, seed, rank, log_dir, allow_early_resets, custom_gym, navi, enjoy=False):
+def make_env(env_id, seed, rank, log_dir, allow_early_resets, custom_gym, navi, 
+    coeff_reward_run=1, coeff_reward_stable=0, coeff_reward_ctrl=0, enjoy=False):
     def _thunk():
         print("CUSTOM GYM:", custom_gym)
         if custom_gym is not None and custom_gym != "" and "gibson" not in custom_gym:
@@ -75,7 +76,10 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets, custom_gym, navi, 
 
         #
         if env_id.startswith("Pupper"):
-            env = PupperRewardMonitorWrapper(env)
+            env = PupperRewardMonitorWrapper(env, 
+                                             coeff_reward_run=coeff_reward_run,
+                                             coeff_reward_stable=coeff_reward_stable,
+                                             coeff_reward_ctrl=coeff_reward_ctrl)
             env = VideoWrapper(env)
 
         is_atari = hasattr(gym.envs, "atari") and isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
@@ -130,11 +134,25 @@ def make_vec_envs(
     custom_gym,
     navi=False,
     num_frame_stack=None,
+    coeff_reward_run=1,
+    coeff_reward_stable=0,
+    coeff_reward_ctrl=0,
     enjoy=False,
 ):
     print(f"=== Making {num_processes} parallel envs with {num_frame_stack} stacked frames")
     envs = [
-        make_env(env_name, seed, i, log_dir, allow_early_resets, custom_gym, navi=navi, enjoy=enjoy)
+        #TODO(add coefficients)
+        make_env(env_name,
+                 seed,
+                 i,
+                 log_dir, 
+                 allow_early_resets, 
+                 custom_gym, 
+                 navi=navi, 
+                 coeff_reward_run=coeff_reward_run,
+                 coeff_reward_stable=coeff_reward_stable,
+                 coeff_reward_ctrl=coeff_reward_ctrl,
+                 enjoy=enjoy)
         for i in range(num_processes)
     ]
 
@@ -374,11 +392,14 @@ class VideoWrapper(gym.Wrapper):
 
 
 class PupperRewardMonitorWrapper(gym.Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, coeff_reward_run, coeff_reward_stable, coeff_reward_ctrl):
         super().__init__(env)
         self.rewards_run = []
         self.rewards_stable = []
         self.rewards_ctrl = []
+        self.coeff_reward_run = coeff_reward_run
+        self.coeff_reward_stable = coeff_reward_stable
+        self.coeff_reward_ctrl = coeff_reward_ctrl
         self.episode = 0
         self.upload_every_n_episodes = 20
         self.rewards_run_store = deque(maxlen=self.upload_every_n_episodes)
@@ -390,7 +411,11 @@ class PupperRewardMonitorWrapper(gym.Wrapper):
         self.rewards_run.append(misc["reward_run"])
         self.rewards_stable.append(misc["reward_stable"])
         self.rewards_ctrl.append(misc["reward_ctrl"])
-        return obs, rew, done, misc
+        modulated_reward = self.coeff_reward_run*misc['reward_run'] + \
+                           self.coeff_reward_stable*misc['reward_stable'] + \
+                           self.coeff_reward_ctrl*misc['reward_ctrl'] 
+
+        return obs, modulated_reward, done, misc
 
     def reset(self, **kwargs):
         if len(self.rewards_run) > 0:
