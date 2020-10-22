@@ -98,8 +98,8 @@ def get_args():
     
     # rewards
     parser.add_argument("--coeff_reward_run",    type=float, default=1, help="modulate the run reward")
-    parser.add_argument("--coeff_reward_stable", type=float, default=1, help="modulate the stable reward")
-    parser.add_argument("--coeff_reward_ctrl",   type=float, default=1, help="modulate the ctrl reward")
+    parser.add_argument("--coeff_reward_stable", type=float, default=.5, help="modulate the stable reward")
+    parser.add_argument("--coeff_reward_ctrl",   type=float, default=.1, help="modulate the ctrl reward")
 
 
 
