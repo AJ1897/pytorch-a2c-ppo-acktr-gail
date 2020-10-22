@@ -37,6 +37,15 @@ if args.wandb is not None:
         wandb.init(project=args.wandb)
     else:
         wandb.init(project=args.wandb, name=args.wandb_name)
+
+    if args.env_name.startswith("Pupper"):
+        env_name_parts = args.env_name.split("-")
+        params = []
+        for part in env_name_parts:
+            if "_" in part:
+                parts = part.split("_")
+                setattr(args, parts[0], float(parts[1]))
+
     wandb.config.update(args)
 else:
     wandb = None

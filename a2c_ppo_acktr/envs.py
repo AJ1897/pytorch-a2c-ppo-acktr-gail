@@ -365,8 +365,9 @@ class VideoWrapper(gym.Wrapper):
         if self.last_frames is None or len(self.last_frames) == 0:
             print("Not enough images for GIF. continuing...")
             return
-
-        frames = np.swapaxes(np.array(self.last_frames), 1, 3)
+        lf = np.array(self.last_frames)
+        print(lf.shape)
+        frames = np.swapaxes(lf, 1, 3)
         frames = np.swapaxes(frames, 2, 3)
         wandb.log({"video": wandb.Video(frames, fps=10, format="gif")})
         print("=== Logged GIF")
